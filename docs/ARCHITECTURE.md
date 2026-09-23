@@ -1,13 +1,7 @@
-# Архитектура
+# Architecture
 
-| Вариант | Сайты | XP | Память | Решение |
-|---|---|---|---|---|
-| Системный IE/WebBrowser | плохо | родной для XP | мало | bootstrap v0.1 |
-| WebView2 | хорошо | нет | средне | исключён |
-| Порт Chromium/Supermium-подобный | лучше | возможен с большим патч-сетом | много | исследовать отдельно |
+The project owns its HTML parser, text layout and browser UI code in C. `network.c` uses WinHTTP with default certificate validation; `http.c` parses HTTP headers for unit-tested transport logic. The intended dataflow is URL -> WinHTTP GET -> bounded body -> HTML parser -> layout -> GDI.
 
-Win32 UI на C вызывает системный COM `Shell.Explorer.2` через `atl.dll`/`AtlAxWin`, получает `IWebBrowser2` и вызывает Navigate/GoBack/GoForward/Refresh. Это НЕ собственный рендерер. Один UI-процесс/поток; каждая вкладка содержит собственный ActiveX control; данные, IE-профиль и адресное пространство общие. Предел восемь вкладок — только грубое ограничение расхода памяти, не sandbox.
+The current network request implementation has a 1 MiB body limit and 15-second timeouts. HTTPS depends on the system WinHTTP/SChannel stack; it is not Internet Explorer, but it is not a bundled TLS implementation. The next UI integration must move fetch work to a worker thread to avoid blocking the Win32 message loop.
 
-Нет брокера, многопроцессной изоляции вкладок, собственного TLS, сетевого процесса, управления разрешениями, sandbox и модели расширений. Безопасность ограничена старым IE и ОС. Решение временное: рабочая оболочка важнее выдуманной совместимости с современным Web.
-
-Для настоящей современной совместимости нужны закреплённая ревизия движка, XP API-shim/аудит, отдельные renderer/network/GPU-процессы, IPC, профиль, контроль разрешений, измерение RAM и регулярные патчи безопасности. Такой движок ещё НЕ интегрирован.
+No JavaScript, CSS layout, images, DOM mutation, extensions, sandbox or multiprocess isolation exists.

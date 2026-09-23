@@ -1,25 +1,11 @@
-# Совместимость и проверка
+# Compatibility
 
-«Код» означает реализацию в NetBeyond, НЕ тест на указанной ОС. «IE» означает унаследованное поведение системного Internet Explorer. GUI на XP, Vista, 7 ещё не запущен.
-
-| Возможность | XP + IE8 | Vista | Windows 7 | Как проверить / предел |
+| Feature | XP | Vista | Windows 7 | Status |
 |---|---|---|---|---|
-| Вкладки | код, без smoke-test | код, без smoke-test | код, без smoke-test | создать/закрыть до восьми вкладок |
-| Omnibox | код, без smoke-test | код, без smoke-test | код, без smoke-test | `test_core`, Enter, Ctrl+L; поиск Bing |
-| HTTP/HTTPS/TLS | IE, устаревший TLS | IE/ОС | IE/ОС | запрос к HTTPS и журнал ошибок; гарантий современных TLS нет |
-| HTML5 и современный JS | IE8: неполно | зависит от IE | зависит от IE | реальные сайты; не заявлена современная совместимость |
-| WebAssembly | нет | нет | нет | нет движка Wasm |
-| WebGL | нет | нет | нет | нет GPU API |
-| WebGPU | нет | нет | нет | нет GPU API |
-| WebRTC | нет | нет | нет | нет реализации |
-| Service Workers | нет | нет | нет | нет реализации |
-| Загрузки | нет собственного UI | нет | нет | поведение IE не считается реализацией NetBeyond |
-| История | лишь временное Back/Next IE | то же | то же | нет интерфейса постоянной истории |
-| Закладки | нет | нет | нет | нет реализации |
-| DevTools | нет собственного UI | нет | нет | нет реализации |
-| Настройки | нет | нет | нет | только внешние настройки IE |
-| Многопроцессность/изоляция вкладок | нет | нет | нет | один процесс, общая память |
-| Контроль ресурсов | лимит 8 вкладок | лимит 8 | лимит 8 | нет лимитов CPU/RAM на вкладку |
-| Chrome MV2/MV3 | нет | нет | нет | тестов расширений нет |
-
-Локально пройдены только `make test` на Linux. CI компилирует Windows i686 и запускает модульный тест на Windows runner после push, но не проверяет XP.
+| Native C parser/layout | source target | source target | source target | unit tested on CI host only |
+| WinHTTP HTTP/HTTPS transport | source target | source target | source target | certificate validation enabled; not run on target OS |
+| Modern TLS | unverified | unverified | unverified | system SChannel capability decides |
+| IE/ActiveX renderer | no | no | no | no longer part of planned runtime path |
+| CSS/JS/images/forms | no | no | no | not implemented |
+| Wasm/WebGL/WebGPU/WebRTC/SW | no | no | no | not implemented |
+| Chrome MV2/MV3 | no | no | no | not implemented |
