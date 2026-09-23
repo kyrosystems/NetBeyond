@@ -1,4 +1,7 @@
 #include "../src/core.h"
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <assert.h>
 #include <string.h>
 int main(void) {
