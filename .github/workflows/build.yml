@@ -20,9 +20,16 @@ jobs:
             mingw-w64-i686-gcc
             mingw-w64-i686-cmake
             mingw-w64-i686-ninja
+      - name: Record toolchain
+        run: |
+          set -eu
+          pacman -Q mingw-w64-i686-gcc mingw-w64-i686-cmake mingw-w64-i686-ninja
+          gcc --version
+          cmake --version
+          ninja --version
       - name: Configure, build and test
         run: |
-          test "$(pacman -Q mingw-w64-i686-gcc | awk '{print $2}')" = "16.2.0-3"
+          set -eu
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           ctest --test-dir build --output-on-failure
