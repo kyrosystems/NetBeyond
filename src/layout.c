@@ -1,0 +1,3 @@
+#include "layout.h"
+#include <string.h>
+int nb_layout_text(const char *text,size_t columns,NB_Layout *l){size_t i=0,line=0,u=0;if(!text||!l||columns<1||columns>=NB_LAYOUT_LINE_MAX)return 0;memset(l,0,sizeof*l);while(text[i]){size_t b,n;while(text[i]==' ')++i;if(!text[i])break;b=i;while(text[i]&&text[i]!=' ')++i;n=i-b;if(n>columns)n=columns;if(u&&u+1+n>columns){l->text[line][u]=0;++line;u=0;}if(line>=NB_LAYOUT_MAX_LINES){l->truncated=1;return 1;}if(u)l->text[line][u++]=' ';memcpy(l->text[line]+u,text+b,n);u+=n;if(i-b>n){l->text[line][u]=0;++line;u=0;}}if(u||line){if(line>=NB_LAYOUT_MAX_LINES)l->truncated=1;else{l->text[line][u]=0;++line;}}l->count=line;return 1;}
