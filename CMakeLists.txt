@@ -9,12 +9,11 @@ if(WIN32)
   set(USE_SHARED_MBEDTLS_LIBRARY OFF CACHE BOOL "" FORCE)
   set(USE_STATIC_MBEDTLS_LIBRARY ON CACHE BOOL "" FORCE)
   if(MINGW)
-    # These definitions must reach Mbed TLS sources, not only NetBeyond sources.
+    # Upstream x509_crt.c defines MBEDTLS_TEST_SW_INET_PTON itself for XP.
     add_compile_definitions(
       __USE_MINGW_ANSI_STDIO=1
       _WIN32_WINNT=0x0501
-      WINVER=0x0501
-      MBEDTLS_TEST_SW_INET_PTON=1)
+      WINVER=0x0501)
   endif()
   FetchContent_Declare(mbedtls
     GIT_REPOSITORY https://github.com/Mbed-TLS/mbedtls.git
