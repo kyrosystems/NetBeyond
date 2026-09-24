@@ -1,14 +1,10 @@
 # NetBeyond
 
-Экспериментальная оболочка браузера на C99 для Win32. Версия 0.1 использует системный Internet Explorer WebBrowser ActiveX, а не собственный или Chromium-движок. Современные сайты и расширения Chrome пока не поддерживаются.
-
-## Что реализовано
-
-До восьми вкладок в одном процессе; строка URL/поиска, HTTP(S)-навигация через установленный IE, кнопки Back/Next/Reload, Ctrl+T/W/L/Tab и Enter в строке. URL-модуль имеет локальные C-тесты. HTTPS/TLS, HTML и JS определяются версией системного IE и ОС, а не NetBeyond. Полный статус: [совместимость](docs/COMPATIBILITY.md), [расширения](docs/EXTENSIONS.md).
+Экспериментальный C99-браузер для Windows XP, Vista и 7. Собственные компоненты: ограниченный HTML text parser, текстовый layout, Win32/GDI UI, URL/history/HTTP parser. IE и ActiveX в runtime path нет. **HTTPS использует статически собираемый Mbed TLS 3.6.6, а не SChannel**; HTTP пока использует WinHTTP. Это не означает совместимость с современными сайтами.
 
 ## Сборка и запуск
 
-32-bit Windows toolchain MinGW-w64 и CMake 3.16+:
+Для разработки нужны CMake >= 3.16, Git и 32-битная C toolchain для Windows. CMake загружает исходники Mbed TLS с фиксированного commit `0bebf8b8c7f07abe3571ded48a11aa907a1ffb20` и его framework submodule. Интернет нужен при первой конфигурации.
 
 ```bat
 cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
@@ -17,24 +13,14 @@ ctest --test-dir build --output-on-failure
 build\NetBeyond.exe
 ```
 
-Linux проверяет только модуль командой `make test`; Windows-приложение на Linux не собирается. Workflow на push/PR собирает i686 exe на Windows и публикует артефакт, но НЕ проверяет запуск на XP, Vista или 7. Текущий MSYS2 MinGW32 официально ориентирован на Windows 7+, поэтому полученный в CI exe нельзя выдавать за проверенный XP/Vista-бинарник. Понадобится отдельная проверенная XP-совместимая цепочка сборки.
+На XP нужна отдельно проверенная XP-совместимая toolchain/CRT; артефакт CI на актуальном MSYS2 не доказывает совместимость с XP. GUI и TLS-handshake на настоящих XP/Vista/7 ещё не проверены. Smoke-test: открыть `about:welcome`, затем `http://` и `https://` test URLs, зафиксировать ОС, TLS handshake/certificate outcome, импортируемые DLL, время, RAM и ошибки.
 
-## Ручной smoke-test XP
+## TLS и доверие
 
-1. XP SP3 x86, установлен IE8; проверить наличие `atl.dll` и регистрации WebBrowser.
-2. Собрать 32-битной XP-совместимой цепочкой, проверить импортируемые API/DLL и зависимости CRT.
-3. Запустить exe на настоящей XP/VM, открыть `https://example.org`, создать вкладку, перейти назад/вперёд и закрыть вкладку.
-4. Записать редакцию ОС, IE, компилятор, ошибки TLS, потребление памяти и результат в issue.
+Mbed TLS 3.6.6 поддерживает TLS 1.2/1.3 и имеет лицензию Apache-2.0 OR GPL-2.0-or-later; используется вариант Apache-2.0. Для HTTPS имя сервера передаётся в SNI/hostname verification, проверка сертификата обязательна. Файл `cacert.pem` рядом с exe используется как актуальный CA bundle; если его нет, сертификаты импортируются из Windows ROOT. Использование ROOT — это лишь источник доверенных корней, **не системный TLS-движок**. На XP ROOT может быть старым; скачивать CA bundle нужно из проверенного источника. См. [docs/TLS.md](docs/TLS.md).
 
-Ни один GUI-бинарник пока не собран или проверен в этом окружении. Не использовать для банковских операций и приватных данных: XP/Vista и IE устарели, изоляции и песочницы нет.
+## Фактические ограничения
 
-## Зависимости и лицензии
+Асинхронная загрузка HTTP(S) и текстовый рендеринг есть в исходниках; успешный Windows build/XP run пока не подтверждён. Один документ, вкладок пока нет. Нет CSS, изображений, JS/DOM, форм, закладок, history UI, extensions MV2/MV3, Wasm, WebGL, WebGPU, WebRTC, Service Workers и sandbox. HTTPS fetch не поддерживает chunked, gzip, redirects, HTTP/2 и proxy; некоторые сайты не загрузятся даже при успешном TLS handshake. Не использовать для конфиденциального веб-сёрфинга.
 
-| Компонент | Версия | Лицензия | Назначение | XP |
-|---|---|---|---|---|
-| IE WebBrowser | установленный IE, на XP максимум IE8 | Microsoft Windows | рендеринг, JS, TLS | старые веб-API и TLS |
-| atl.dll | системная версия | Microsoft Windows | ActiveX-контейнер | нужны AtlAxWinInit/AtlAxGetControl |
-| MSYS2 mingw-w64-i686-gcc | 16.2.0-3 (проверка CI) | GPL/GCC Runtime Library Exception | сборка CI | текущая сборка MinGW32 не подтверждена на XP |
-| CMake | 3.16+ | BSD-3-Clause | генерация сборки | запускается на машине сборки |
-
-Собственный код: MIT (см. LICENSE). Сторонний движок не включён в исходники. CI использует version tags `actions/checkout@v4.2.2`, `msys2/setup-msys2@v2.27.0`, `actions/upload-artifact@v4.6.2`; MSYS2 пакеты CMake/Ninja и базовый образ остаются обновляемыми, то есть полной воспроизводимости ещё нет.
+Код NetBeyond: MIT. Зависимости: Mbed TLS 3.6.6 (Apache-2.0 OR GPL-2.0-or-later; C TLS/crypto, статическая линковка); Win32/GDI, WinHTTP для HTTP, CryptoAPI ROOT store и Winsock (компоненты Windows); CMake >= 3.16 (BSD-3-Clause, сборка); MinGW-w64 GCC (GPL/GCC Runtime Library Exception, сборка). Ограничения XP и версии компонентов описаны выше; rolling MSYS2 packages/runner image пока не закреплены полностью.

@@ -1,11 +1,18 @@
-# Compatibility
+# Совместимость
 
-| Feature | XP | Vista | Windows 7 | Status |
+«В коде» не означает «проверено на этой ОС». GUI/TLS runtime на XP, Vista и 7 не проверен.
+
+| Возможность | XP | Vista | Windows 7 | Факт и ограничения |
 |---|---|---|---|---|
-| Native C parser/layout | source target | source target | source target | unit tested on CI host only |
-| WinHTTP HTTP/HTTPS transport | source target | source target | source target | certificate validation enabled; not run on target OS |
-| Modern TLS | unverified | unverified | unverified | system SChannel capability decides |
-| IE/ActiveX renderer | no | no | no | no longer part of planned runtime path |
-| CSS/JS/images/forms | no | no | no | not implemented |
-| Wasm/WebGL/WebGPU/WebRTC/SW | no | no | no | not implemented |
-| Chrome MV2/MV3 | no | no | no | not implemented |
+| Native GDI UI / omnibox | в коде, не проверено | в коде, не проверено | в коде, не проверено | один документ; вкладок нет |
+| HTTPS TLS 1.2/1.3 | Mbed TLS, не проверено | Mbed TLS, не проверено | Mbed TLS, не проверено | статическая библиотека; CA bundle или Windows ROOT; обязательная проверка сертификата |
+| HTTP GET | WinHTTP, не проверено | WinHTTP, не проверено | WinHTTP, не проверено | редиректы отключены; лимит 1 МиБ |
+| HTML text subset | тесты parser | тесты parser | тесты parser | нет CSS/DOM/JS/изображений/форм |
+| WebAssembly, WebGL, WebGPU, WebRTC, Service Workers | нет | нет | нет | не реализовано |
+| Chrome extensions MV2/MV3 | нет | нет | нет | API и тестов расширений нет |
+| История и закладки | хранилище истории отдельно | то же | то же | UI не подключён, закладок нет |
+| Загрузки, DevTools, настройки | нет | нет | нет | не реализовано |
+| Многопроцессность/изоляция | нет | нет | нет | только network worker thread |
+| Контроль ресурсов | ограничен | ограничен | ограничен | буфер ответа 1 МиБ, нет CPU/RAM квот |
+
+Windows CI не заменяет реальный XP/Vista/7 smoke-test. Современные сайты не поддерживаются только благодаря наличию TLS 1.3: у renderer нет CSS/JS/DOM.

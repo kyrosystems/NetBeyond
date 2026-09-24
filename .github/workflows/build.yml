@@ -17,12 +17,14 @@ jobs:
           msystem: MINGW32
           update: true
           install: >-
+            git
             mingw-w64-i686-gcc
             mingw-w64-i686-cmake
             mingw-w64-i686-ninja
       - name: Record toolchain
         run: |
           set -eu
+          git --version
           pacman -Q mingw-w64-i686-gcc mingw-w64-i686-cmake mingw-w64-i686-ninja
           gcc --version
           cmake --version

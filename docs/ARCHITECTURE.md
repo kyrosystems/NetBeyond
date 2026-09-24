@@ -1,7 +1,9 @@
-# Architecture
+# Архитектура
 
-The project owns its HTML parser, text layout and browser UI code in C. `network.c` uses WinHTTP with default certificate validation; `http.c` parses HTTP headers for unit-tested transport logic. The intended dataflow is URL -> WinHTTP GET -> bounded body -> HTML parser -> layout -> GDI.
+Путь HTTPS: `omnibox -> network_worker -> nb_network_get -> nb_tls_get -> Winsock TCP -> Mbed TLS 3.6.6 -> HTTP/1.1 parser -> HTML subset parser -> fixed-buffer layout -> GDI`. Путь обычного HTTP использует WinHTTP без автоматических редиректов, чтобы переход на HTTPS не обходил Mbed TLS через SChannel. IE/ActiveX больше не участвуют.
 
-The current network request implementation has a 1 MiB body limit and 15-second timeouts. HTTPS depends on the system WinHTTP/SChannel stack; it is not Internet Explorer, but it is not a bundled TLS implementation. The next UI integration must move fetch work to a worker thread to avoid blocking the Win32 message loop.
+Собственный код написан на C99; Mbed TLS — сторонний криптографический компонент с закреплённой ревизией и Apache-2.0 лицензией. TLS-проверка цепочки/имени обязательна. Источник CA: `cacert.pem` рядом с exe или Windows ROOT, что не делает TLS системным.
 
-No JavaScript, CSS layout, images, DOM mutation, extensions, sandbox or multiprocess isolation exists.
+Процессы: один UI-процесс плюс один worker thread для сетевого запроса. `WM_APP+1` доставляет результат в UI; повторный запрос во время загрузки отклоняется. Это не изоляция вкладок и не sandbox. Статический буфер ответа ограничен 1 МиБ; parser/layout используют фиксированные буферы. Текущий HTML subset не имеет CSS/DOM/JS и не является полноценным веб-движком.
+
+Бинарник и TLS handshake не проверены на XP/Vista/7. Требуются CI compile/link log, проверки сертификатов/отказа на неверном имени, реальный XP smoke-test и затем аудит ошибок network/parser перед заявлениями о безопасном браузинге.
