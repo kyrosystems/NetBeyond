@@ -19,6 +19,7 @@ jobs:
           install: >-
             git
             mingw-w64-i686-gcc
+            mingw-w64-i686-binutils
             mingw-w64-i686-cmake
             mingw-w64-i686-ninja
       - name: Build and test
@@ -27,10 +28,11 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           ctest --test-dir build --output-on-failure
-      - name: Reject Vista-only bcrypt dependency
+      - name: Inspect imports and reject bcrypt.dll
         run: |
           set -eu
-          i686-w64-mingw32-objdump -p build/NetBeyond.exe > build/imports.txt
+          command -v objdump
+          objdump -p build/NetBeyond.exe > build/imports.txt
           if grep -iq 'DLL Name: bcrypt.dll' build/imports.txt; then
             echo 'bcrypt.dll import would prevent XP startup' >&2
             exit 1
