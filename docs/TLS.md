@@ -1,9 +1,9 @@
-# Встроенный TLS и XP entropy
+# Встроенный TLS и XP-совместимость
 
-HTTPS использует статически собираемый Mbed TLS 3.6.6 (commit `0bebf8b8c7f07abe3571ded48a11aa907a1ffb20`, Apache-2.0 OR GPL-2.0-or-later; выбираем Apache-2.0). Это сторонний C TLS engine, не SChannel и не собственная криптография. Обычный HTTP идёт через WinHTTP без автоматических переходов на HTTPS.
+HTTPS использует статически собираемый Mbed TLS 3.6.6 (commit `0bebf8b8c7f07abe3571ded48a11aa907a1ffb20`, лицензия Apache-2.0 OR GPL-2.0-or-later; выбран Apache-2.0). Это сторонний TLS engine на C, не SChannel. HTTP использует WinHTTP без автоматических переходов на HTTPS.
 
-Официальный Windows entropy source Mbed TLS импортирует `BCryptGenRandom` из `bcrypt.dll`, которой нет на XP. Мы НЕ распространяем Microsoft DLL. CMake проверяет исходник закреплённой ревизии и только в build-tree заменяет Windows entropy source на XP CryptoAPI `CryptGenRandom`; заменяет bcrypt link на advapi32. Если upstream изменится, конфигурация падает вместо неаудированного патча. CI дополнительно проверяет import table exe и прикладывает `imports.txt`. Это не отменяет отдельного XP runtime-test.
+На XP нет `bcrypt.dll`, а в `msvcrt.dll` нет `_vsnprintf_s`; build-tree патчи переводят entropy на CryptoAPI `CryptGenRandom` и secure CRT ветку MinGW на стандартный `vsnprintf`. На XP нет также `inet_pton`/`inet_ntop` в `WS2_32.dll`. CMake передаёт `_WIN32_WINNT=0x0501`, `WINVER=0x0501` и `MBEDTLS_TEST_SW_INET_PTON=1` всей Mbed TLS-сборке, чтобы X.509-код выбрал software parser. CI проверяет четыре запрещённых импорта и прикладывает `imports.txt`.
 
-Проверка сертификата и имени хоста обязательна. `cacert.pem` рядом с exe имеет приоритет; иначе корни берутся из Windows ROOT и импортируются в Mbed TLS. Это источник доверия, а не системный TLS. На старой XP обновите корни через доверенный CA bundle. Не отключайте проверку для обхода ошибок.
+`cacert.pem` рядом с exe имеет приоритет; иначе корни импортируются из Windows ROOT в Mbed TLS. Проверка цепочки и hostname обязательна. На XP системный ROOT может быть старым: используйте доверенный обновлённый CA bundle, не отключайте верификацию.
 
-HTTPS HTTP/1.1 path пока отклоняет chunked, не поддерживает gzip, redirects, proxy, HTTP/2; TLS handshake/XP запуск не проверены. Даже при TLS 1.3 собственный renderer не имеет CSS/JS/DOM.
+Компиляция и анализ импортов не доказывают работу на XP: нужен реальный XP smoke-test, в том числе TLS-handshake и проверка отказа при неверном сертификате. Сейчас нет chunked/gzip/redirects/proxy/HTTP2; renderer не имеет CSS/JS/DOM.

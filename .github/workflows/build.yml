@@ -33,9 +33,9 @@ jobs:
           set -eu
           command -v objdump
           objdump -p build/NetBeyond.exe > build/imports.txt
-          if grep -Eiq 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s' build/imports.txt; then
+          if grep -Eiq 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s|inet_pton|inet_ntop' build/imports.txt; then
             echo 'A Windows XP-incompatible import remains:' >&2
-            grep -Ei 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s' build/imports.txt >&2
+            grep -Ei 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s|inet_pton|inet_ntop' build/imports.txt >&2
             exit 1
           fi
       - uses: actions/upload-artifact@v4.6.2
