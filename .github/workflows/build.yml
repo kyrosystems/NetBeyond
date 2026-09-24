@@ -28,22 +28,24 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           ctest --test-dir build --output-on-failure
-      - name: Inspect imports and reject bcrypt.dll
+      - name: Reject unsupported XP imports
         run: |
           set -eu
           command -v objdump
           objdump -p build/NetBeyond.exe > build/imports.txt
-          if grep -iq 'DLL Name: bcrypt.dll' build/imports.txt; then
-            echo 'bcrypt.dll import would prevent XP startup' >&2
+          if grep -Eiq 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s' build/imports.txt; then
+            echo 'A Windows XP-incompatible import remains:' >&2
+            grep -Ei 'DLL Name: bcrypt\.dll|_vsnprintf_s|_vsprintf_s' build/imports.txt >&2
             exit 1
           fi
       - uses: actions/upload-artifact@v4.6.2
+        if: always()
         with:
           name: NetBeyond-windows-i686
           path: |
             build/NetBeyond.exe
             build/imports.txt
-          if-no-files-found: error
+          if-no-files-found: warn
   core-linux:
     runs-on: ubuntu-24.04
     steps:

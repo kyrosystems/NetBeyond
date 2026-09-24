@@ -1,0 +1,35 @@
+# Patch the pinned build-tree Mbed TLS checkout, never Windows system DLLs.
+if(NOT DEFINED NB_MBEDTLS_SOURCE_DIR)
+  message(FATAL_ERROR "NB_MBEDTLS_SOURCE_DIR is required")
+endif()
+set(patched_files 0)
+foreach(relative_path IN ITEMS
+        library/platform.c
+        library/debug.c
+        tf-psa-crypto/drivers/builtin/src/platform.c)
+  set(source_file "${NB_MBEDTLS_SOURCE_DIR}/${relative_path}")
+  if(NOT EXISTS "${source_file}")
+    continue()
+  endif()
+  file(READ "${source_file}" source_text)
+  string(FIND "${source_text}" "vsnprintf_s" secure_call)
+  if(secure_call EQUAL -1)
+    continue()
+  endif()
+  string(FIND "${source_text}" "#if defined(_TRUNCATE)" truncate_branch)
+  if(truncate_branch EQUAL -1)
+    message(FATAL_ERROR "${relative_path}: secure CRT call without known guard")
+  endif()
+  string(FIND "${source_text}" "#if defined(_TRUNCATE) && !defined(__MINGW32__)" already_patched)
+  if(already_patched EQUAL -1)
+    string(REPLACE "#if defined(_TRUNCATE)"
+                   "#if defined(_TRUNCATE) && !defined(__MINGW32__)"
+                   source_text "${source_text}")
+    file(WRITE "${source_file}" "${source_text}")
+  endif()
+  math(EXPR patched_files "${patched_files} + 1")
+endforeach()
+if(patched_files EQUAL 0)
+  message(FATAL_ERROR "No known Mbed TLS secure-CRT site found; audit the pinned dependency")
+endif()
+message(STATUS "XP CRT patch checked ${patched_files} Mbed TLS file(s)")
