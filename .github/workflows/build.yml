@@ -21,24 +21,26 @@ jobs:
             mingw-w64-i686-gcc
             mingw-w64-i686-cmake
             mingw-w64-i686-ninja
-      - name: Record toolchain
-        run: |
-          set -eu
-          git --version
-          pacman -Q mingw-w64-i686-gcc mingw-w64-i686-cmake mingw-w64-i686-ninja
-          gcc --version
-          cmake --version
-          ninja --version
-      - name: Configure, build and test
+      - name: Build and test
         run: |
           set -eu
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
           cmake --build build
           ctest --test-dir build --output-on-failure
+      - name: Reject Vista-only bcrypt dependency
+        run: |
+          set -eu
+          i686-w64-mingw32-objdump -p build/NetBeyond.exe > build/imports.txt
+          if grep -iq 'DLL Name: bcrypt.dll' build/imports.txt; then
+            echo 'bcrypt.dll import would prevent XP startup' >&2
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4.6.2
         with:
           name: NetBeyond-windows-i686
-          path: build/NetBeyond.exe
+          path: |
+            build/NetBeyond.exe
+            build/imports.txt
           if-no-files-found: error
   core-linux:
     runs-on: ubuntu-24.04
